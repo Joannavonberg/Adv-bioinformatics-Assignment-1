@@ -1,1 +1,7 @@
+# code written by: 
+# Joanna von Berg
+# student number:
+# 3666697
 
+x <- -10:10
+plot(x, 2*cos(x), type = "l", main = "y = 2*cos(x)")
