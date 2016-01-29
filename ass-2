@@ -1,0 +1,50 @@
+# code written by: 
+# Joanna von Berg
+# student number:
+# 3666697
+
+library(cgdsr)
+
+cgds <- CGDS("http://www.cbioportal.org/public-portal/")
+getCancerStudies(cgds)
+mycancerstudy <- getCancerStudies(cgds)[116,1]                  # 116 for thyroid
+mycaselist <- getCaseLists(cgds,mycancerstudy)[1,1]             # first row for all tumors
+mygeneticprofile <- getGeneticProfiles(cgds,mycancerstudy)[,1]  # first row for mutations
+mut <- getProfileData(cgds,"BRAF",mygeneticprofile,mycaselist)  # get a data.frame with individuals and their mutations
+
+# I want to know which mutations are there, so I can count them
+uni_ids <- unique(mut$thca_tcga_mutations)
+# to remove NA, I checked the output and saw NA was the second value
+uni_ids <- uni_ids[-2]
+# the count for each mutation will go in the vector counts
+counts <- c() 
+
+for (mutation in uni_ids){
+  ind <- mut$thca_tcga_mutations == mutation
+  counts <- c(counts, sum(ind, na.rm = TRUE))
+}
+
+# Now we have a vector containing mutation names and a vector containing the counts for these mutations
+# The names will be given as the attribute "names" of the vector counts
+names(counts) <- uni_ids
+
+# Before plotting is possible, we need to know which amino acids are mutated.
+# Therefore a new vector, aa, is initialized.
+# In this vector, the first appearing number in each mutation name will be put, parsed to an integer.
+aa <- as.integer(gsub("[A-Za-z]+|_.+", "", names(counts)))
+
+# I'm defining a matrix with rgb-values, that can be given to rgb().
+# In this way, I can give different alpha-values for the lines and the points in the plot.
+color <- matrix(c(0.1, 0.4, 0.6), ncol = 3, byrow = TRUE)
+
+plot(aa, counts, main = "Number of mutations in the protein kinase B-raf in the thyroid TCGA dataset", xlim = 
+       c(1,766), ylim = c(1,235), xaxp = c(0, 1000, 20), yaxp = c(0, 500, 10), xlab = "Mutations", ylab = 
+       "Number of individuals with a certain mutation", type = "h", col = rgb(color, alpha = 0.5), lwd =
+       2)
+points(aa, counts, type = "p", pch = 19, col = rgb(color), cex = 1.5)
+
+# I want to label each point with its mutation name, but they overlap.
+# I could not figure out how to solve this problem in a nice, clean way.
+posi <- rep(3, length(names(counts)))
+posi[names(counts) %in% c("V600E")] <- 2
+text(aa, counts, labels = names(counts), pos = posi)
